@@ -3,6 +3,19 @@ const cors = require('cors')
 const bodyParser = require('body-parser')
 const { fetchDataFromDatabase } = require('./middleware/getMiddleware');
 
+const multer = require('multer')
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
 const app = express()
 const port = 8383
 
@@ -69,13 +82,48 @@ app.post('/signup', async (req, res) => {
           return res.status(500).send('Internal Server Error');
         }
         res.json({ userID: result.rows[0].userid })
-        
       })
-  
     })
-
   });
+})
 
+app.post('/addevent', upload.array('images', 5), async (req, res) => {
+  const {date, userID, name, description, numusers} = req.body
+
+  const eventInsertQuery = 'INSERT INTO events (date, name, description, numusers, userID) VALUES ($1, $2, $3, $4, $5) RETURNING eventid';
+  const eventInsertValues = [date, name, description, numusers, userID];
+  
+  pool.query(eventInsertQuery, eventInsertValues, async (err, result) => {
+    
+    const eventId = result.rows[0].eventid;
+    console.log('Inserted event with ID:', eventId);
+
+    try {
+      for (const file of req.files) {
+        // Extract necessary data from file object
+        const { originalname, path } = file;
+  
+        await new Promise((resolve, reject) => {
+          pool.query('INSERT INTO content (file_path, filename, eventid) VALUES ($1, $2, $3)', [path, originalname, eventId], (err, result) => {
+            if (err) {
+              console.error('Error inserting file into content:', err);
+              reject(err);
+            } else {
+              console.log('File inserted into content');
+              resolve();
+            }
+          });
+        });
+      }
+    } catch (error) {
+      res.status(500).send('Internal Server Error');
+    }
+  });
+  
+  
+  
+ 
+  res.status(200).send('Upload successful');
 })
 
 

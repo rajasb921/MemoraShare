@@ -6,6 +6,7 @@ import TimeLine from "./components/TimeLine"
 import { useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from './contexts/AuthContext';
+import EventForm from "./pages/EventForm"
 
 
 function App () {
@@ -26,6 +27,15 @@ function App () {
               element={
                 <RequireAuth>
                   <TimeLine />
+                </RequireAuth>
+              }
+          />
+          <Route
+              index
+              path="/addevent"
+              element={
+                <RequireAuth>
+                  <EventForm />
                 </RequireAuth>
               }
           />
