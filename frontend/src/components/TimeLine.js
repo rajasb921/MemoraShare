@@ -2,10 +2,13 @@ import axios from 'axios'
 import { VerticalTimeline, VerticalTimelineElement }  from 'react-vertical-timeline-component';
 import 'react-vertical-timeline-component/style.min.css';
 import React, { useState, useEffect, useContext } from "react";
-import { Navigate, Link, useNavigate } from "react-router-dom";
+import { Navigate, Link, useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from '../contexts/AuthContext';
 import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
+import Masonry, {ResponsiveMasonry} from 'react-responsive-masonry'
+import SearchBar from './SearchBar';
+
 
 import {
   AppBar,
@@ -20,6 +23,7 @@ import {
   Button,
 } from "@mui/material";
 import "../styles/TimeLine.css"
+import "../styles/Gallery.css"
 
 const StyledToolbar = styled(Toolbar)({
   display: "flex",
@@ -54,25 +58,34 @@ function formatDate(dateString) {
 }
 
 function App() {
-  
+  const params = useParams()
   const [data, setData] = useState();
-  const {dispatch} = useContext(AuthContext)
+  const [userID, setUserID] = useState()
+  const {currentUser,dispatch} = useContext(AuthContext)
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios.get(
-        'http://localhost:8383'
+      setUserID(localStorage.getItem('userID'))
+      const res = await axios.post(
+        'http://localhost:8383/user-events-images', { userId: params.userID }
       );
       setData(res.data)
+      console.log(res.data)
+      
     };
-    fetchData();
+    fetchData();  
   }, []);
   
   const handleLogout = () => {
     localStorage.removeItem("userID");
     dispatch({ type: "LOGOUT", payload: null });
     <Navigate to="/login" />;
+  }
+
+  const handleSettings = () => {
+
   }
 
   const handleNavigate = () => {
@@ -87,38 +100,85 @@ function App() {
           <Typography variant="h6" style={{ fontFamily: "Outfit" }}>
             MEMORASHARE
           </Typography>
+          <SearchBar placeholder="Enter username..."/>
+          <div style={{display:"flex", flexDirection:"row", gap:"20px"}}>
           <StyledButton onClick={handleLogout}>
             <Typography variant="h9" style={{ fontFamily: "Outfit" , color:"#976045"}}>
               LOGOUT
             </Typography>
           </StyledButton>
+          <StyledButton onClick={handleSettings}>
+            <Typography variant="h9" style={{ fontFamily: "Outfit" , color:"#976045"}}>
+              FREE/PREM
+            </Typography>
+          </StyledButton>
+          </div>
         </StyledToolbar>
     </AppBar>
       <VerticalTimeline lineColor='grey'>
-      {data &&
-        data.map((item, index) => (
-          <VerticalTimelineElement
-            className="vertical-timeline-element--work"
-            contentStyle={{ background: 'lightgrey', color: '#fff' }}
-            contentArrowStyle={{ borderRight: '7px solid  lightgrey' }}
-            date="2011 - present"
-            iconStyle={{ background: 'rgb(33, 150, 243)', color: '#fff' }}
-            
-          >
-            <h3 className="vertical-timeline-element-title">{item.fname} {item.lname}</h3>
-          </VerticalTimelineElement>
-        ))
-      }
-    </VerticalTimeline>
-    <AppBar position="sticky" className="bottom-navbar" style={{ top: 'auto', bottom: 5, backgroundColor: "rgba(151, 96, 69, 0.8)", backdropFilter: "blur(5px)", border: "1px solid rgba(0, 0, 0, 0.2)", borderRadius: "10px", width: "50%", left: "25%", margin: "0 5px", borderRadius: "50px" }}>
-        <StyledToolbar style={{display: "flex", flexDirection: "row", justifyContent: "space-around", alignItems: "center"}}>
-          
+      {data && data.events.map((event, index) => (
+        <VerticalTimelineElement
+        key={index} // Ensure a unique key for each element
+        className="vertical-timeline-element--work"
+        contentStyle={{
+          background: '#F5F5F5',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #D2B48C',
+          borderRadius: '10px',
+          padding: '10px',
+          color: '#4E433C', // Brownish text color for readability
+        }}
+        contentArrowStyle={{ borderRight: '3px solid #F5F5F5' }}
+        iconStyle={{ background: '#8B4513', color: '#F5F5F5' }} // Dark brown background with light text color
+      > 
+          <div>
+            <div className='event-top' style={{display:"flex", flexDirection:"row", justifyContent:"space-between", padding:"10px", alignItems:"center"}}>
+              <div style={{ fontSize: '25px', fontWeight: 'bold', marginBottom: '2px' }}>{event.eventDetails[0].name}</div>
+              <div style={{ fontSize: '16px', marginBottom: '0' }}>
+                {`${event.eventDetails[0].date.substring(5, 7)}/${event.eventDetails[0].date.substring(8, 10)}/${event.eventDetails[0].date.substring(0, 4)}`}
+              </div>
+          </div>
+          <div className='gallery'>
+            {event.eventImages.map((detail, idx) => (
+              <div className='pics' key={idx}>
+                <img
+                  src={`http://localhost:8383/${detail.file_path.replace(/\\/g, '/')}`}
+                  style={{ width: '100%', borderRadius: '5px', marginBottom: '10px' }}
+                  alt={`Image ${idx}`}
+                />
+              </div>
+            ))}
+          </div>
+          <div className='collab-users'>
+            {event.collabUsernames.map((element, idx) => {
+              if (element.userid !== currentUser) {
+                return (
+                  <a
+                    key={idx}
+                    className='collab-user'
+                    href={`http://localhost:3000/${element.userid}`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  >
+                    {element.username}
+                  </a>
+                );
+              } else {
+                return null; // Don't render the <a> tag if condition is met
+              }
+            })}
+          </div>
+        </div>
+      </VerticalTimelineElement>
+      ))}
+      </VerticalTimeline>
+    {params.userID === localStorage.getItem('userID') && <AppBar position="sticky" className="bottom-navbar" style={{ top: 'auto', bottom: 5, backgroundColor: "rgba(151, 96, 69, 0.8)", backdropFilter: "blur(5px)", border: "1px solid rgba(0, 0, 0, 0.2)", borderRadius: "10px", width: "50%", left: "25%", margin: "0 5px", borderRadius: "50px" }}>
+        <StyledToolbar style={{display: "flex", flexDirection: "row", justifyContent: "space-around", alignItems: "center"}}> 
           <IconButton color="inherit" onClick={handleNavigate}>
             <AddIcon />
-          </IconButton>
-          
+          </IconButton>    
         </StyledToolbar>
-    </AppBar>
+    </AppBar>}
     </div>
     </>
   );

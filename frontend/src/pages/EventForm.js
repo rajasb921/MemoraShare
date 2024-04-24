@@ -9,12 +9,14 @@ function EventForm() {
     date: '',
     name: '',
     description: '',
+    usernames: '',
     numusers: '',
   });
 
   const [selectedFiles, setSelectedFiles] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [message, setMessage] = useState(false)
+  const [upgradetoPremium, setUpgradeToPremium] = useState(false)
   const [images, setImages] = useState([])
   const fileInputRef = useRef(null)
 
@@ -72,16 +74,21 @@ function EventForm() {
         formDataWithImages.append('userID', formData.userID);
         formDataWithImages.append('name', formData.name);
         formDataWithImages.append('description', formData.description);
+        formDataWithImages.append('usernames', formData.usernames);
         formDataWithImages.append('numusers', formData.numusers);
       try {
-          await axios.post('http://localhost:8383/addevent', formDataWithImages, {
+          const result = await axios.post('http://localhost:8383/addevent', formDataWithImages, {
               headers: {
                   'Content-Type': 'multipart/form-data'
               }
           });
-          setMessage(true);
+          if (result.status === 501) {
+            setUpgradeToPremium(true)
+          } else {
+            setMessage(result.data.message);
+          }
           setImages([]); // Clear images after successful upload
-          setFormData({ date: '', name: '', description: '', numusers: '' , userID: ''}); // Clear form fields
+          setFormData({ date: '', name: '', description: '', usernames: '' , userID: ''}); // Clear form fields
       } catch (error) {
           console.error('Error uploading files:', error);
         
@@ -132,7 +139,18 @@ function EventForm() {
           <TextField
             style={{fontFamily: 'Outfit' }}
             fullWidth
-            label="Number of Users"
+            label="Collab"
+            type="text"
+            name="usernames"
+            value={formData.usernames}
+            onChange={handleChange}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            style={{fontFamily: 'Outfit' }}
+            fullWidth
+            label="Number of users"
             type="number"
             name="numusers"
             value={formData.numusers}
@@ -172,7 +190,8 @@ function EventForm() {
             <button type='button' >
               Upload
             </button>
-            { message && <div>Upload Successful</div> }
+            {message && <div>Upload successful</div>}
+            {upgradetoPremium && <div>Upgrade to Premium to Insert more events!</div>}
           </div>   
         </Grid>
         <Grid item xs={12}>

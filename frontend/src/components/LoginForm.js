@@ -16,7 +16,8 @@ import { AuthContext } from "../contexts/AuthContext.js";
 
 
 const LoginForm = () => {
-    const [error, setError] = useState(false);
+    const [invalidCredentials, setInvalidCredentials] = useState(false);
+    const [specialChr, setspecialChar] = useState(false);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const { dispatch } = useContext(AuthContext);
@@ -29,9 +30,16 @@ const LoginForm = () => {
           const response = await axios.post('http://localhost:8383/login', { username, password });
           localStorage.setItem('userID', response.data.userID);
           dispatch({ type: "LOGIN", payload: response.data.userID });  
-          navigate('/')
+          navigate(`/${response.data.userID}`)
         } catch (error){
-          setError(true)
+          if(error.response.status === 400){
+            setspecialChar(true)
+            console.log(specialChr)
+          }
+          if(error.response.status === 401){
+            setInvalidCredentials(true)
+            console.log(invalidCredentials)
+          }
         }  
     };
   
@@ -78,9 +86,14 @@ const LoginForm = () => {
               </Grid>
             </Grid>
             </Grid>
-            {error && (
+            {invalidCredentials && (
               <Typography variant="body2" color="error">
                 Wrong email or password!
+              </Typography>
+            )}
+            {specialChr && (
+              <Typography variant="body2" color="error">
+                Special Characters!
               </Typography>
             )}
           </form>

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Outfit:wght@500&display=swap');
+
 ::-webkit-scrollbar {
     width: 10px;
   }
@@ -161,4 +163,31 @@
     gap: 15px;
   }
 
-  
+.event-top{
+  display:flex;
+  flex-direction:row;
+  justify-content:space-between;
+  padding:10px;
+  align-items:center;
+  font-family: 'Outfit', sans-serif;
+}
+
+.collab-users{
+  display: flex;
+  flex-direction: row; 
+  align-items: center;
+  gap: 15px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.collab-user{
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 5px;
+  background-color: #E0E0E0; /* Grey background color */
+  color: #333; /* Dark grey text color */
+  border-radius: 5px;
+  font-size: 15px;
+  font-weight: bold;
+}
+

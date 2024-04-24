@@ -49,7 +49,7 @@ const SignUpForm = () => {
           const response = await axios.post('http://localhost:8383/signup', { firstname, lastname, username, password, email});
           localStorage.setItem('userID', response.data.userID);
           dispatch({ type: "LOGIN", payload: response.data.userID });
-          navigate('/')  
+          navigate(`/${response.data.userID}`)  
         } catch (error){
           setError('Username or Email already exists')
         }

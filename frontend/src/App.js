@@ -23,7 +23,7 @@ function App () {
           <Route path="/signup" element={<Signup />}></Route>
           <Route
               index
-              path="/"
+              path="/:userID"
               element={
                 <RequireAuth>
                   <TimeLine />
