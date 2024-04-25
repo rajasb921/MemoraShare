@@ -55,7 +55,7 @@ const LoginForm = () => {
                 <TextField
                   variant="outlined"
                   fullWidth 
-                  label="Email"
+                  label="Username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}

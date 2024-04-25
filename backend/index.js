@@ -45,18 +45,26 @@ app.get('/', async (req, res) => {
   })
 });
 
+app.get('/searchUsernames', async (req, res) => {
+  // Query to search for users based on the search query
+  pool.query('SELECT username as label, username as value FROM users', (err, result) => {
+    if (err) {
+      return res.status(500).send('Internal Server Error');
+    }
+    res.json([...result.rows ]); // Sending the usernames found in the database
+  });
+})
+
+
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   // Regular expression patterns for alphabets and numbers only
   const alphanumericPattern = /^[a-zA-Z0-9]+$/;
 
   // Check if username and password match the pattern
-  if (!alphanumericPattern.test(username) || !alphanumericPattern.test(password)) {
-    return res.status(400).send('Username and password must contain only alphabets or numbers.');
-  }
+ 
 
   pool.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password], (err, result) => {
-    
 
     // If no user found with the provided username and password
     if (result.rows.length === 0) {
@@ -94,11 +102,28 @@ app.post('/signup', async (req, res) => {
   });
 })
 
-app.post('/addevent', upload.array('images', 5), async (req, res) => {
-  const { date, userID, name, description, numusers, usernames } = req.body; // Add usernames field here
+app.post('/change-setting', async (req, res) => {
+  const {userId} = req.body
+  pool.query('DELETE FROM free_users WHERE userid = $1', [userId], (err, result) => {
+    pool.query('INSERT INTO premium_users (userid) VALUES ($1)', [userId], (err, result) => {
+      res.send('User setting updated')
+    })
+  })
+})
 
-  const eventInsertQuery = 'INSERT INTO events (date, name, description, numusers, userID) VALUES ($1, $2, $3, $4, $5) RETURNING eventid;';
-  const eventInsertValues = [date, name, description, numusers, userID];
+app.post('/free-premium', async (req, res) => {
+  const {userId} = req.body
+  pool.query('SELECT userid FROM premium_users WHERE userid = $1', [userId], (err, result) => {
+    res.json({userId : result.rows})
+  })
+})
+
+
+
+app.post('/addevent', upload.array('images', 5), async (req, res) => {
+  const { date, userID, name, description, usernames } = req.body; // Add usernames field here
+  const eventInsertQuery = 'INSERT INTO events (date, name, description, userID) VALUES ($1, $2, $3, $4) RETURNING eventid;';
+  const eventInsertValues = [date, name, description,userID];
 
   try {
     // Execute the event insertion query
@@ -107,18 +132,14 @@ app.post('/addevent', upload.array('images', 5), async (req, res) => {
     const eventId = eventResult.rows[0].eventid;
     console.log('Inserted event with ID:', eventId);
 
-    // Split the usernames string into individual usernames
-    const usernamesArray = usernames.split(',');
-    usernamesArray.forEach(username =>username.trim());
-    
     const collabInsertQuery = `INSERT INTO collab (eventid, userid) VALUES ($1, $2)`;
     await pool.query(collabInsertQuery, [eventId, userID]);
     // Iterate over the usernames list
-   
-    if (usernamesArray[0] !== ''){
-      for (const username of usernamesArray) {
+    
+    if (typeof usernames !== 'undefined'){
+      for (const username of usernames) {
+
         // Execute query to get userID for the current username
-        console.log(username)
         const userQuery = `SELECT userid FROM users WHERE username = TRIM($1)`;
         const userResult = await pool.query(userQuery, [username]);
         
@@ -162,6 +183,7 @@ app.post('/addevent', upload.array('images', 5), async (req, res) => {
 });
 
 
+
 // app.post('/addevent', upload.array('images', 5), async (req, res) => {
 //   const {date, userID, name, description, numusers} = req.body
 
@@ -200,13 +222,14 @@ app.post('/addevent', upload.array('images', 5), async (req, res) => {
 app.post('/user-events-images', async (req, res) => {
   try {
     const { userId } = req.body;
-
+    
     // Fetch events for the given user
     const userEvents = await pool.query('SELECT * FROM events WHERE eventid IN (SELECT eventid FROM collab WHERE userid = $1)', [userId]);
-   
+    
     // Initialize an array to store image paths
     const eventAndCollabs = []
     // Iterate through each event and fetch corresponding images
+    console.log(userEvents.rows)
     for (const event of userEvents.rows) {
       const collabedUsernamesQuery = await pool.query('select username, u.userid from collab c join users u on u.userid = c.userid where c.eventid = $1', [event.eventid]);
       const eventDetailsQuery = await pool.query('SELECT name, date, description FROM content c JOIN events e ON c.eventid = e.eventid WHERE c.eventid = $1', [event.eventid]);
@@ -217,8 +240,6 @@ app.post('/user-events-images', async (req, res) => {
         eventImages: [...eventImagesQuery.rows]
       })
     }
-
-    // Respond with the array of image paths
     res.json({ events: eventAndCollabs});
   } catch (error) {
     console.error('Error fetching user event images:', error);

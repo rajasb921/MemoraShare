@@ -61,6 +61,7 @@ function App() {
   const params = useParams()
   const [data, setData] = useState();
   const [userID, setUserID] = useState()
+  const [showUpgradetoPrem, setShowUpgradetoPrem] = useState()
   const {currentUser,dispatch} = useContext(AuthContext)
 
   const navigate = useNavigate();
@@ -73,6 +74,16 @@ function App() {
       );
       setData(res.data)
       console.log(res.data)
+
+      const result = await axios.post(
+        'http://localhost:8383/free-premium', { userId: params.userID }
+      );
+      console.log(result.data)
+      if (result.data.userId.length === 0){
+        setShowUpgradetoPrem(true)
+      }else{
+        setShowUpgradetoPrem(false)
+      }
       
     };
     fetchData();  
@@ -84,8 +95,19 @@ function App() {
     <Navigate to="/login" />;
   }
 
-  const handleSettings = () => {
-
+  const handleSettings = async () => {
+    const res = await axios.post(
+      'http://localhost:8383/change-setting', { userId: localStorage.getItem('userID') }
+    );
+    
+    const result = await axios.post(
+      'http://localhost:8383/free-premium', { userId: localStorage.getItem('userID') }
+    );
+    if (result.data.userId.length === 0){
+      setShowUpgradetoPrem(true)
+    }else{
+      setShowUpgradetoPrem(false)
+    }
   }
 
   const handleNavigate = () => {
@@ -97,9 +119,14 @@ function App() {
     <div style={{width:"100%", height:"100vh", position: "relative"}}>
     <AppBar position="sticky" className="appbar" style={{backgroundColor:"#976045"}}>
         <StyledToolbar>
-          <Typography variant="h6" style={{ fontFamily: "Outfit" }}>
-            MEMORASHARE
-          </Typography>
+          <div style={{display:'flex', flexDirection:"row", alignItems:'center', gap:'10px'}}>
+            <Typography variant="h6" style={{ fontFamily: "Outfit" }}>
+              MEMORASHARE
+            </Typography>
+            {showUpgradetoPrem && <Typography variant="h8" style={{ fontFamily: "Outfit", backgroundColor:'#E6D3B3', padding:'5px 4px', borderRadius:'5px', alignItems:'center' }}>
+              Upgrade to Premium ✨
+            </Typography>}
+          </div>
           <SearchBar placeholder="Enter username..."/>
           <div style={{display:"flex", flexDirection:"row", gap:"20px"}}>
           <StyledButton onClick={handleLogout}>
@@ -109,7 +136,7 @@ function App() {
           </StyledButton>
           <StyledButton onClick={handleSettings}>
             <Typography variant="h9" style={{ fontFamily: "Outfit" , color:"#976045"}}>
-              FREE/PREM
+              PREMIUM
             </Typography>
           </StyledButton>
           </div>
@@ -167,6 +194,9 @@ function App() {
                 return null; // Don't render the <a> tag if condition is met
               }
             })}
+          </div>
+          <div className='captions'>
+            <p>{event.eventDetails[0].description}</p>
           </div>
         </div>
       </VerticalTimelineElement>
