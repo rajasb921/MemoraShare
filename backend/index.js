@@ -25,7 +25,7 @@ const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'postgres',
-  password: 'admin',
+  password: 'jaravichitra',
   port: 5432,
 })
 
@@ -62,7 +62,10 @@ app.post('/login', async (req, res) => {
   const alphanumericPattern = /^[a-zA-Z0-9]+$/;
 
   // Check if username and password match the pattern
- 
+  if (!alphanumericPattern.test(username) || !alphanumericPattern.test(password)) {
+    return res.status(400).send('Username and password must contain only alphabets or numbers.');
+  }
+
 
   pool.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password], (err, result) => {
 
@@ -124,7 +127,7 @@ app.post('/addevent', upload.array('images', 5), async (req, res) => {
   const { date, userID, name, description, usernames } = req.body; // Add usernames field here
   const eventInsertQuery = 'INSERT INTO events (date, name, description, userID) VALUES ($1, $2, $3, $4) RETURNING eventid;';
   const eventInsertValues = [date, name, description,userID];
-
+  console.log(usernames);
   try {
     // Execute the event insertion query
     const eventResult = await pool.query(eventInsertQuery, eventInsertValues);
@@ -134,14 +137,17 @@ app.post('/addevent', upload.array('images', 5), async (req, res) => {
 
     const collabInsertQuery = `INSERT INTO collab (eventid, userid) VALUES ($1, $2)`;
     await pool.query(collabInsertQuery, [eventId, userID]);
+    console.log('Inserted collab with ID:', eventId);
+    console.log('Inserted event for user with ID:', userID);
     // Iterate over the usernames list
-    
+
     if (typeof usernames !== 'undefined'){
       for (const username of usernames) {
 
         // Execute query to get userID for the current username
         const userQuery = `SELECT userid FROM users WHERE username = TRIM($1)`;
         const userResult = await pool.query(userQuery, [username]);
+        console.log(userResult.rows)
         
         // Extract userID from the query result
         const userId = userResult.rows[0].userid;
@@ -175,8 +181,8 @@ app.post('/addevent', upload.array('images', 5), async (req, res) => {
     res.json({message:'Event added successfully!'});
   } catch (error) {
     console.error('Error adding event:', error);
-    if (error === "User already has 3 events"){
-      res.status(501).json({message:'Cannot insert more than 3'});
+    if (error === "User already has 2 events"){
+      res.status(501).json({message:'Cannot insert more than 2'});
     }
     res.status(500).json({message:'Internal Server Error'});
   }
