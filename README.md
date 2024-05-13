@@ -40,7 +40,7 @@ MemoraShare is meant to be a concept idea for a social media web application des
 
 <!-- GETTING STARTED -->
 ## Getting Started
-Since this is a concept idea, MemoraShare is not yet hosted on any service. In order to test the app, download the code as a ZIP file and test locally. Otherwise, watch the demo video to get a detailed look at all the functionalities of the app.
+Since this is a concept idea, MemoraShare is not yet hosted on any service. In order to test the app, download the code as a ZIP file and test locally. Otherwise, watch the demo video to get a detailed look at all the functionalities of the app (Download the ZIP file for the video demonstration).
 
 ### Prerequisites
 * Install npm
